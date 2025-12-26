@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InforMatrix | Система тестирования</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #6366f1; --secondary: #ec4899; --bg-gradient: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%); }
+        body { background: var(--bg-gradient); background-attachment: fixed; font-family: 'Inter', sans-serif; color: #1e293b; min-height: 100vh; }
+        .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); }
+        .glass-card { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(12px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.5); transition: all 0.3s ease; }
+        .glass-card:hover { transform: translateY(-5px); background: rgba(255, 255, 255, 0.95); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+        .btn-grad { background-image: linear-gradient(to right, #6366f1 0%, #ec4899 51%, #6366f1 100%); padding: 12px 30px; text-align: center; text-transform: uppercase; transition: 0.5s; background-size: 200% auto; color: white; border-radius: 12px; border: none; font-weight: 700; letter-spacing: 0.5px; }
+        .btn-grad:hover { background-position: right center; color: #fff; }
+        .hidden { display: none !important; }
+        .q-img { max-height: 250px; border-radius: 12px; margin-bottom: 20px; max-width: 100%; object-fit: contain; }
+        .custom-opt { padding: 15px; border: 2px solid transparent; background: rgba(255,255,255,0.5); border-radius: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; }
+        .custom-opt:hover { background: #fff; }
+        .custom-opt input:checked + span { color: var(--primary); font-weight: bold; }
+        .res-circle { width: 160px; height: 160px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; margin: 0 auto 25px; border: 10px solid var(--primary); background: rgba(255,255,255,0.8); color: var(--primary); }
+    </style>
+</head>
+<body>
+<nav class="navbar fixed-top glass-panel mx-4 mt-3 p-3 hidden" id="navbar">
+    <div class="container-fluid">
+        <span class="fs-4 fw-bold" style="color: var(--primary)">InforMatrix</span>
+        <div class="d-flex gap-3 align-items-center">
+            <button class="btn btn-sm btn-link text-dark text-decoration-none fw-bold" onclick="app.toCatalog()">Каталог</button>
+            <button class="btn btn-sm btn-link text-dark text-decoration-none fw-bold" onclick="app.toGlobalTop()">Топ Учеников</button>
+            <button class="btn btn-sm btn-link text-dark text-decoration-none fw-bold" onclick="app.toProfile()">Кабинет</button>
+            <div class="vr"></div>
+            <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="auth.logout()">Выход</button>
+        </div>
+    </div>
+</nav>
+<div class="container py-5" style="margin-top: 80px;">
+    <div id="screen-auth" class="row justify-content-center align-items-center min-vh-100" style="margin-top: -80px;">
+        <div class="col-md-5">
+            <div class="glass-panel p-5 text-center">
+                <h2 class="fw-bold mb-4">Вход в систему</h2>
+                <div class="btn-group w-100 mb-4 bg-white rounded-pill p-1 shadow-sm">
+                    <input type="radio" class="btn-check" name="role" id="role-s" value="student" checked onchange="auth.toggleFields()">
+                    <label class="btn btn-light rounded-pill w-50 fw-bold" for="role-s">👨‍🎓 Ученик</label>
+                    <input type="radio" class="btn-check" name="role" id="role-t" value="teacher" onchange="auth.toggleFields()">
+                    <label class="btn btn-light rounded-pill w-50 fw-bold" for="role-t">👨‍🏫 Учитель</label>
+                </div>
+                <div class="text-start mb-3"><label class="small fw-bold text-muted ps-2">ФИО</label><input type="text" id="reg-name" class="form-control form-control-lg rounded-4 border-0 shadow-sm"></div>
+                <div class="text-start mb-3"><label class="small fw-bold text-muted ps-2">Пароль</label><input type="password" id="reg-pass" class="form-control form-control-lg rounded-4 border-0 shadow-sm"></div>
+                <div id="student-only-block">
+                    <div class="text-start mb-3"><label class="small fw-bold text-muted ps-2">Учебное заведение</label><input type="text" id="reg-school" class="form-control rounded-4 border-0 shadow-sm"></div>
+                    <div class="text-start mb-4"><label class="small fw-bold text-muted ps-2">Класс / Группа</label><input type="text" id="reg-group" class="form-control rounded-4 border-0 shadow-sm"></div>
+                </div>
+                <button class="btn btn-grad w-100 py-3 mt-2" onclick="auth.login()">Войти / Регистрация</button>
+            </div>
+        </div>
+    </div>
+    <div id="screen-catalog" class="hidden">
+        <div class="mb-5">
+            <h4 class="fw-bold mb-3">🔥 Популярные тесты</h4>
+            <div class="row flex-nowrap overflow-auto pb-4 g-3" id="popular-container"></div>
+        </div>
+        <div class="glass-panel p-4 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <h3 class="fw-bold m-0">Все тесты</h3>
+            <div class="d-flex gap-3">
+                <select id="filter-cat" class="form-select" onchange="app.renderCatalog()" style="width: 200px;">
+                    <option value="All">Все категории</option><option value="Программирование">Программирование</option><option value="Алгоритмы">Алгоритмы</option><option value="Железо">Устройство ПК</option><option value="Сети">Сети</option>
+                </select>
+                <button id="btn-add-test" class="btn btn-grad btn-sm py-2 px-4 hidden" onclick="app.toEditor()">+ Создать</button>
+            </div>
+        </div>
+        <div class="row g-4" id="catalog-grid"></div>
+    </div>
+    <div id="screen-editor" class="hidden">
+        <div class="glass-panel p-5">
+            <h3 class="fw-bold mb-4">Новый тест</h3>
+            <div class="row g-3 mb-4">
+                <div class="col-md-5"><input type="text" id="ed-title" class="form-control fw-bold" placeholder="Название теста"></div>
+                <div class="col-md-3"><select id="ed-cat" class="form-select"><option>Программирование</option><option>Алгоритмы</option><option>Железо</option><option>Сети</option></select></div>
+                <div class="col-md-2"><input type="number" id="ed-time" class="form-control" placeholder="Мин" value="20"></div>
+            </div>
+            <div id="ed-questions-area"></div>
+            <button class="btn btn-outline-primary w-100 mb-3" onclick="editor.addQ()">+ Добавить вопрос</button>
+            <div class="text-end"><button class="btn btn-success px-5 fw-bold" onclick="editor.save()">Опубликовать</button></div>
+        </div>
+    </div>
+    <div id="screen-quiz" class="hidden">
+        <div class="row justify-content-center"><div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4 glass-panel p-3">
+                <h5 class="m-0 fw-bold" id="quiz-header-title">Тест</h5>
+                <div class="badge bg-danger fs-5" id="timer">00:00</div>
+            </div>
+            <div id="quiz-body"></div>
+            <button class="btn btn-grad w-100 py-3 mt-4" id="btn-finish" onclick="quiz.submit()">Завершить тест</button>
+            <button class="btn btn-secondary w-100 mt-4 hidden" id="btn-exit-view" onclick="app.toCatalog()">Выйти</button>
+        </div></div>
+    </div>
+    <div id="screen-result" class="hidden">
+        <div class="glass-panel p-5 text-center mx-auto" style="max-width: 600px;">
+            <h2 class="fw-bold mb-4">Результат</h2>
+            <div class="res-circle" id="res-score-percent">0%</div>
+            <h4 class="text-primary fw-bold mb-4" id="res-level">Уровень</h4>
+            <div class="bg-white bg-opacity-50 rounded-4 p-4 text-start row g-3">
+                <div class="col-6">✅ Верно: <b id="res-right">0</b></div><div class="col-6">⏱ Время: <b id="res-time">0с</b></div>
+                <div class="col-6">🏆 Место: <b id="res-place">-</b></div><div class="col-6">⭐ Баллы: <b id="res-points">0</b></div>
+            </div>
+            <div class="mt-4 d-grid gap-2"><button class="btn btn-primary" onclick="app.showLeaderboard(quiz.activeTestId)">Лидеры теста</button><button class="btn btn-outline-dark" onclick="app.toCatalog()">В каталог</button></div>
+        </div>
+    </div>
+    <div id="screen-leaderboard" class="hidden"><div class="glass-panel p-5">
+        <div class="d-flex justify-content-between align-items-center mb-4"><h3 class="fw-bold m-0" id="lb-title"></h3><button class="btn btn-light btn-sm" onclick="app.toCatalog()">Назад</button></div>
+        <table class="table table-borderless align-middle"><thead class="border-bottom"><tr><th>#</th><th>Ученик</th><th>Группа</th><th>Баллы</th><th>Время</th></tr></thead><tbody id="lb-rows"></tbody></table>
+    </div></div>
+    <div id="screen-global" class="hidden"><div class="glass-panel p-5"><h3 class="fw-bold text-center mb-4">🏆 Глобальный рейтинг</h3><table class="table table-hover align-middle"><thead><tr><th>Место</th><th>Имя</th><th>Школа</th><th>Баллы</th></tr></thead><tbody id="global-rows"></tbody></table></div></div>
+    <div id="screen-profile" class="hidden"><div class="row g-4">
+        <div class="col-md-4"><div class="glass-panel p-4 text-center h-100"><div style="font-size: 4rem;">👤</div><h3 class="fw-bold mt-2" id="prof-name"></h3><p class="text-muted" id="prof-role"></p><p class="text-primary fw-bold" id="prof-meta"></p></div></div>
+        <div class="col-md-8"><div class="glass-panel p-4 h-100"><h4 class="fw-bold border-bottom pb-2 mb-3">История</h4><div id="prof-content"></div></div></div>
+    </div></div>
+</div>
+
+<script>
+const DB = { get: (k) => JSON.parse(localStorage.getItem(k)) || [], set: (k, v) => localStorage.setItem(k, JSON.stringify(v)), user: null };
+const auth = {
+    toggleFields() { document.getElementById('student-only-block').classList.toggle('hidden', document.getElementById('role-t').checked); },
+    login() {
+        const name = document.getElementById('reg-name').value.trim();
+        const pass = document.getElementById('reg-pass').value.trim();
+        const role = document.querySelector('input[name="role"]:checked').value;
+        if(!name || !pass) return alert("Заполните поля!");
+        let users = DB.get('users_v3'); let user = users.find(u => u.name === name);
+        if(user) { if(user.pass !== pass) return alert("Пароль!"); DB.user = user; }
+        else {
+            let extra = {};
+            if(role === 'student') {
+                const s = document.getElementById('reg-school').value; const g = document.getElementById('reg-group').value;
+                if(!s || !g) return alert("Заполните данные ученика!");
+                extra = { school: s, group: g, totalScore: 0 };
+            } else { extra = { school: null, group: null }; }
+            user = { name, pass, role, ...extra }; users.push(user); DB.set('users_v3', users); DB.user = user;
+        }
+        document.getElementById('navbar').classList.remove('hidden'); app.toCatalog();
+    },
+    logout() { location.reload(); }
+};
+  const app = {
+    hideAll: () => document.querySelectorAll('.container > div[id^="screen-"]').forEach(el => el.classList.add('hidden')),
+    toCatalog() { this.hideAll(); document.getElementById('screen-catalog').classList.remove('hidden'); document.getElementById('btn-add-test').classList.toggle('hidden', DB.user.role !== 'teacher'); this.renderCatalog(); this.renderPopular(); },
+    renderCatalog() {
+        const cat = document.getElementById('filter-cat').value; const tests = DB.get('tests_v3'); const grid = document.getElementById('catalog-grid');
+        grid.innerHTML = tests.filter(t => cat === 'All' || t.category === cat).map(t => `
+            <div class="col-md-4"><div class="glass-card p-4 h-100 d-flex flex-column">
+                <div class="d-flex align-items-center mb-2"><span class="badge bg-light text-dark border">${t.category}</span>${DB.user.name === t.author ? `<span class="text-danger ms-auto cursor-pointer" onclick="editor.del(${t.id})">🗑</span>` : ''}</div>
+                <h5 class="fw-bold">${t.title}</h5><p class="small text-muted">Автор: ${t.author}</p>
+                <div class="mt-auto gap-2 d-flex flex-column">
+                    ${DB.user.role === 'teacher' ? `<button class="btn btn-outline-primary w-100" onclick="quiz.start(${t.id}, true)">Обзор</button>` : `<button class="btn btn-grad w-100" onclick="quiz.start(${t.id}, false)">Начать</button>`}
+                    <button class="btn btn-sm text-muted" onclick="app.showLeaderboard(${t.id})">Лидеры</button>
+                </div>
+            </div></div>`).join('');
+    },
+    renderPopular() {
+        const tests = DB.get('tests_v3'); const results = DB.get('results_v3'); const counts = {};
+        results.forEach(r => counts[r.tid] = (counts[r.tid] || 0) + 1);
+        document.getElementById('popular-container').innerHTML = [...tests].sort((a,b) => (counts[b.id]||0) - (counts[a.id]||0)).slice(0, 10).map(t => `
+            <div class="col-3" style="min-width: 250px;"><div class="glass-card p-3"><h6 class="fw-bold text-truncate">${t.title}</h6><small>${t.category}</small></div></div>`).join('');
+    },
+    toEditor() { this.hideAll(); document.getElementById('ed-questions-area').innerHTML = ''; editor.addQ(); document.getElementById('screen-editor').classList.remove('hidden'); },
+    toProfile() {
+        this.hideAll(); const u = DB.user; document.getElementById('prof-name').innerText = u.name;
+        document.getElementById('prof-role').innerText = u.role; document.getElementById('prof-meta').innerText = u.school || '';
+        const list = document.getElementById('prof-content');
+        if(u.role === 'teacher') list.innerHTML = DB.get('tests_v3').filter(t => t.author === u.name).map(t => `<div class="p-2">${t.title}</div>`).join('');
+        else list.innerHTML = DB.get('results_v3').filter(r => r.student === u.name).map(r => `<div class="p-2 d-flex justify-content-between"><span>${r.title}</span><b>${r.score}</b></div>`).join('');
+        document.getElementById('screen-profile').classList.remove('hidden');
+    },
+    toGlobalTop() {
+        this.hideAll(); const users = DB.get('users_v3').filter(u => u.role === 'student').sort((a,b) => b.totalScore - a.totalScore);
+        document.getElementById('global-rows').innerHTML = users.map((u, i) => `<tr><td>${i+1}</td><td>${u.name}</td><td>${u.school}</td><td>${u.totalScore}</td></tr>`).join('');
+        document.getElementById('screen-global').classList.remove('hidden');
+    },
+    showLeaderboard(tid) {
+        this.hideAll(); const t = DB.get('tests_v3').find(x => x.id === tid); const res = DB.get('results_v3').filter(r => r.tid === tid).sort((a,b) => b.score - a.score || a.time - b.time);
+        document.getElementById('lb-title').innerText = t.title;
+        document.getElementById('lb-rows').innerHTML = res.map((r, i) => `<tr><td>${i+1}</td><td>${r.student}</td><td>${r.group}</td><td>${r.score}</td><td>${r.time}с</td></tr>`).join('');
+        document.getElementById('screen-leaderboard').classList.remove('hidden');
+    }
+};
+const editor = {
+    addQ() {
+        const id = Date.now();
+        document.getElementById('ed-questions-area').insertAdjacentHTML('beforeend', `<div class="glass-card p-3 mb-3 q-block" id="qb-${id}"><div class="d-flex gap-2 mb-2"><input type="text" class="form-control q-txt" placeholder="Вопрос"><input type="number" class="form-control q-pts" style="width:80px" value="1"><button class="btn-close" onclick="document.getElementById('qb-${id}').remove()"></button></div><input type="text" class="form-control mb-2 q-img" placeholder="URL картинки"><div id="qo-${id}"></div><button class="btn btn-sm btn-link" onclick="editor.addOpt(${id})">+ Ответ</button></div>`);
+        this.addOpt(id); this.addOpt(id);
+    },
+    addOpt(qid) { document.getElementById(`qo-${qid}`).insertAdjacentHTML('beforeend', `<div class="d-flex gap-2 mb-1 opt-row"><input type="checkbox" class="opt-ok"><input type="text" class="form-control form-control-sm opt-val"></div>`); },
+    save() {
+        const title = document.getElementById('ed-title').value; if(!title) return;
+        const qs = Array.from(document.querySelectorAll('.q-block')).map(b => ({ txt: b.querySelector('.q-txt').value, pts: +b.querySelector('.q-pts').value, img: b.querySelector('.q-img').value, opts: Array.from(b.querySelectorAll('.opt-row')).map(o => ({ txt: o.querySelector('.opt-val').value, isOk: o.querySelector('.opt-ok').checked })) }));
+        const tests = DB.get('tests_v3'); tests.push({ id: Date.now(), author: DB.user.name, title, category: document.getElementById('ed-cat').value, time: document.getElementById('ed-time').value, qs });
+        DB.set('tests_v3', tests); app.toCatalog();
+    },
+    del(id) { if(confirm("Удалить?")) { DB.set('tests_v3', DB.get('tests_v3').filter(t => t.id !== id)); app.renderCatalog(); } }
+};
+const quiz = {
+    timer: null, activeTestId: null, startTime: 0, activeQs: [],
+    start(id, isView) {
+        const t = DB.get('tests_v3').find(x => x.id === id); this.activeTestId = id; let qs = JSON.parse(JSON.stringify(t.qs));
+        if(!isView) { qs.sort(() => Math.random() - 0.5); qs.forEach(q => q.opts.sort(() => Math.random() - 0.5)); this.startTime = Date.now(); this.runTimer(t.time * 60); }
+        this.activeQs = qs; app.hideAll(); document.getElementById('screen-quiz').classList.remove('hidden');
+        document.getElementById('quiz-body').innerHTML = qs.map((q, i) => `<div class="glass-card p-4 mb-3">${q.img ? `<img src="${q.img}" class="q-img">` : ''}<h6>${q.txt}</h6>${q.opts.map((o, oi) => `<label class="custom-opt mb-1"><input type="checkbox" name="q${i}" value="${oi}" ${isView?'disabled':''}><span>${o.txt}</span></label>`).join('')}</div>`).join('');
+    },
+    runTimer(sec) { clearInterval(this.timer); let s = sec; this.timer = setInterval(() => { document.getElementById('timer').innerText = `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; if(s-- <= 0) this.submit(); }, 1000); },
+    submit() {
+        clearInterval(this.timer); const time = Math.floor((Date.now() - this.startTime)/1000); let score = 0, max = 0;
+        this.activeQs.forEach((q, i) => { max += q.pts; const chosen = Array.from(document.querySelectorAll(`input[name="q${i}"]:checked`)).map(c => +c.value); const right = q.opts.map((o, idx) => o.isOk ? idx : -1).filter(x => x !== -1); if(chosen.length === right.length && chosen.every(v => right.includes(v))) score += q.pts; });
+        const percent = Math.round((score/max)*100) || 0; const t = DB.get('tests_v3').find(x => x.id === this.activeTestId);
+        const res = { tid: this.activeTestId, title: t.title, student: DB.user.name, school: DB.user.school, group: DB.user.group, score, time, percent };
+        const results = DB.get('results_v3'); results.push(res); DB.set('results_v3', results);
+        const users = DB.get('users_v3'); const me = users.find(u => u.name === DB.user.name); me.totalScore += score; DB.set('users_v3', users);
+        app.hideAll(); document.getElementById('screen-result').classList.remove('hidden'); document.getElementById('res-score-percent').innerText = percent + "%";
+        document.getElementById('res-right').innerText = score; document.getElementById('res-time').innerText = time + "с";
+    }
+};
+</script>
+</body>
+</html>
